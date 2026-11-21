@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intertemporal Choice Study</title>
+<script src="lib/jspsych.js"></script>
+<link href="lib/jspsych.css" rel="stylesheet" type="text/css">
+<script src="lib/plugin-html-keyboard-response.js"></script>
+<script src="lib/plugin-survey-html-form.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    background-color:#f8f9fa; width:100%; height:100%; overflow:hidden;
+  }
+  .jspsych-display-element {
+    font-size:20px; width:100%; height:100vh; max-width:100%; margin:0; padding:40px;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+  }
+  .jspsych-content { max-width:1000px; width:100%; }
+
+  .quit-btn {
+    position:absolute; top:15px; right:20px; font-size:15px; color:#fff;
+    background-color:#dc3545; padding:10px 20px; border-radius:6px;
+    border:2px solid #b02a37; cursor:pointer; font-weight:bold; z-index:100;
+    box-shadow:0 2px 8px rgba(220,53,69,.4);
+  }
+  .quit-btn:hover { background-color:#b02a37; }
+
+  .consent-box {
+    text-align:left; line-height:1.8; max-height:55vh; overflow-y:auto;
+    padding:30px; border:1px solid #dee2e6; border-radius:8px;
+    background-color:#fff; margin-bottom:24px; font-size:17px;
+  }
+  .consent-box h2 { text-align:center; color:#333; margin-bottom:20px; font-size:26px; }
+  .consent-box h3 { color:#495057; margin-top:18px; margin-bottom:10px; font-size:20px; }
+  .consent-box p { margin-bottom:10px; text-indent:2em; }
+  .checkbox-group { margin:20px 0; padding:18px; background-color:#f8f9fa; border-radius:8px; text-align:left; }
+  .checkbox-item { display:flex; align-items:flex-start; justify-content:flex-start; margin:14px 0; font-size:17px; text-align:left; }
+  .checkbox-item input[type="checkbox"] { width:22px; height:22px; margin:0 14px 0 0; cursor:pointer; flex-shrink:0; }
+  .checkbox-item label { cursor:pointer; line-height:1.6; text-align:left; text-indent:0; margin:0; padding:0; flex:1; }
+
+  .instruction-box {
+    text-align:center; line-height:2.0; padding:44px 48px; background-color:#fff;
+    border-radius:8px; border:1px solid #dee2e6; font-size:20px;
+    max-width:1040px; width:100%; margin:0 auto;
+  }
+  .instruction-box h2 { text-align:center; margin-bottom:30px; color:#333; font-size:28px; }
+  .instruction-box p { margin:10px 0; text-align:center; }
+
+  .fixation { font-size:52px; font-weight:bold; color:#212529; text-align:center; }
+
+  .decision-container { display:flex; justify-content:center; align-items:center; gap:120px; margin:40px 0; }
+  .option-box {
+    text-align:center; padding:36px 46px; border:3px solid #dee2e6; border-radius:12px;
+    background-color:#fff; min-width:300px;
+  }
+  .option-desc { font-size:21px; color:#495057; margin-bottom:16px; }
+  .option-amount { font-size:44px; font-weight:bold; color:#212529; margin:14px 0; }
+  .option-key { font-size:17px; color:#6c757d; margin-top:18px; }
+  .round-indicator { text-align:center; color:#adb5bd; font-size:16px; margin-top:24px; min-height:22px; }
+
+  .scale-question { text-align:center; padding:30px 20px; max-width:1000px; margin:0 auto; }
+  .page-indicator { color:#adb5bd; font-size:16px; margin-bottom:26px; }
+  .question-text { font-size:24px; line-height:1.8; margin-bottom:40px; }
+  .scale-options { display:flex; justify-content:center; gap:10px; margin:30px 0; flex-wrap:nowrap; }
+  .scale-option {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:18px 0; border:2px solid #dee2e6; border-radius:8px; background-color:#fff;
+    width:120px; min-height:110px; flex-shrink:0;
+  }
+  .scale-option .num { font-size:26px; font-weight:bold; color:#007bff; }
+  .scale-option .label { font-size:12px; color:#6c757d; margin-top:8px; line-height:1.3; padding:0 5px; }
+  .scale-hint { color:#6c757d; font-size:18px; margin-top:24px; }
+
+  .demo-form { text-align:left; max-width:1020px; margin:0 auto; background:#fff; padding:36px 48px;
+    border:1px solid #dee2e6; border-radius:8px; font-size:18px; line-height:2; }
+  .demo-form p.item { margin:16px 0; display:flex; align-items:center; gap:14px; flex-wrap:nowrap; white-space:nowrap; }
+  .demo-form p.item select, .demo-form p.item input[type="number"], .demo-form p.item input[type="text"] {
+    font-size:16px; padding:6px 10px; border:1px solid #ced4da; border-radius:4px;
+    font-family:inherit; flex:1; max-width:420px; min-width:0;
+  }
+  .demo-form p.item input[type="number"] { max-width:110px; flex:0 0 110px; }
+  #jspsych-survey-html-form-next { display:none; }
+</style>
+<base target="_blank">
+</head>
+<body>
+<script>
+// ============ Device check: desktop/laptop only ============
+(function () {
+  var hasMouse = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+  var minDim = Math.min(window.screen.width, window.screen.height);
+  if (!hasMouse || minDim < 600) {
+    document.body.innerHTML = '<div style="text-align:center;padding:100px 30px;font-family:Arial,sans-serif;">' +
+      '<h2 style="font-size:22px;color:#333;margin-bottom:16px;">Please use a computer</h2>' +
+      '<p style="font-size:16px;color:#6c757d;line-height:1.8;">This study requires a desktop or laptop computer with a physical keyboard.<br>' +
+      'Please reopen this link on a computer. Thank you for your understanding.</p></div>';
+    throw new Error('mobile device blocked');
+  }
+})();
+// ============================================================
+// ================= Global variables =================
+const urlParams = new URLSearchParams(window.location.search);
+const uid = urlParams.get('PROLIFIC_PID') || urlParams.get('uid') || ('S' + Math.random().toString(36).substr(2, 8).toUpperCase());
+const expStartTime = Date.now();
+let quitListener = null;
+
+// ================= Quit function =================
+function injectQuitButton() {
+  const old = document.getElementById('quit-btn-dynamic');
+  if (old) old.remove();
+  let content = document.querySelector('.jspsych-content') || document.body;
+  const btn = document.createElement('button');
+  btn.id = 'quit-btn-dynamic';
+  btn.className = 'quit-btn';
+  btn.textContent = '✕ Exit Study';
+  btn.onclick = showQuitModal;
+  content.insertBefore(btn, content.firstChild);
+}
+function showQuitModal() {
+  if (quitListener) { jsPsych.pluginAPI.cancelKeyboardResponse(quitListener); quitListener = null; }
+  const modal = document.createElement('div');
+  modal.id = 'quit-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);' +
+    'display:flex;justify-content:center;align-items:center;z-index:999999;';
+  modal.innerHTML = '<div style="background:#fff;padding:40px;border-radius:12px;max-width:480px;text-align:center;">' +
+    '<h3 style="font-size:24px;margin-bottom:16px;color:#dc3545;">Exit the study?</h3>' +
+    '<p style="font-size:17px;line-height:1.7;margin-bottom:28px;">You may exit at any time. Your responses will not be saved or uploaded, and you will not receive the participation payment.</p>' +
+    '<div style="display:flex;gap:14px;justify-content:center;">' +
+    '<button id="btn-quit-yes" style="padding:12px 26px;background:#dc3545;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:16px;font-weight:bold;">Exit</button>' +
+    '<button id="btn-quit-no" style="padding:12px 26px;background:#6c757d;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:16px;">Continue</button>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+  document.getElementById('btn-quit-yes').onclick = confirmQuit;
+  document.getElementById('btn-quit-no').onclick = () => { modal.remove(); bindQuitKey(); };
+}
+function bindQuitKey() {
+  if (quitListener) jsPsych.pluginAPI.cancelKeyboardResponse(quitListener);
+  quitListener = jsPsych.pluginAPI.getKeyboardResponse({
+    callback_function: showQuitModal, valid_responses:['p','P'],
+    rt_method:'performance', persist:true, allow_held_key:false
+  });
+}
+function confirmQuit() {
+  document.body.innerHTML = '<div style="text-align:center;padding:100px 40px;font-family:Arial,sans-serif;">' +
+    '<h2 style="font-size:26px;color:#333;margin-bottom:16px;">You have exited the study</h2>' +
+    '<p style="font-size:17px;color:#6c757d;">Your responses will not be saved or uploaded, and you will not receive the participation payment.<br>You may now close this page and return to Prolific.</p></div>';
+}
+
+const UPLOAD_URL = 'https://szu-hj-d4go84em55ed1c6e9-1511798712.ap-shanghai.app.tcloudbase.com/exp1saveus';
+
+function uploadCSV(isPartial) {
+  const csv = jsPsych.data.get().csv();
+  return fetch(UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid: uid, csv: csv, prefix: 'am' })
+  });
+}
+
+function downloadCSV(isPartial) {
+  const csv = jsPsych.data.get().csv();
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (isPartial ? 'ampartial_' : 'amexp1_') + uid + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+
+// ================= 云端数据上传 =================
+
+const jsPsych = initJsPsych({ on_finish: function() { /* data already saved when the end page appeared */ } });
+jsPsych.data.addProperties({ uid: uid, start_time: new Date().toISOString() });
+
+// ================= Informed consent =================
+const consentContent = `
+<div class="consent-box">
+  <h2>Informed Consent Statement</h2>
+  <h3>1. Purpose of the Study</h3>
+  <p>This study compares delay discounting between human participants and large language models across Chinese and American language-cultural backgrounds. The study has been reviewed and approved by the Institutional Review Board (IRB) of Shenzhen University.</p>
+  <h3>2. Procedures</h3>
+  <p>The study consists of the following stages:</p>
+  <p>1. Informed consent confirmation;</p>
+  <p>2. Personal information;</p>
+  <p>3. Instructions and practice trials;</p>
+  <p>4. Decision task;</p>
+  <p>5. Questionnaires.</p>
+  <p>The entire session is expected to take approximately 10–15 minutes.</p>
+  <h3>3. Eligibility</h3>
+  <p>1. You are between 18 and 60 years of age;</p>
+  <p>2. You have no diagnosed psychiatric disorder;</p>
+  <p>3. You have normal or corrected-to-normal vision;</p>
+  <p>4. You have not participated in a similar delay-discounting study recently.</p>
+  <h3>4. Payment</h3>
+  <p>Compensation is contingent on your data passing pre-specified quality checks. The checks were set before data collection and mainly include: careful responding according to your true preferences, passing the attention-check item, and completing the study within a reasonable amount of time. Participants whose data fail these checks will not be compensated.</p>
+  <p>If your data pass the quality checks, you will receive a fixed payment of $1.20 through the Prolific platform.</p>
+  <p>The delays in the task ("in 1 month", "in 12 months") describe the decision scenario only; all payments are settled immediately after the session.</p>
+  <h3>5. Voluntary Participation and Right to Withdraw</h3>
+  <p>Your participation is entirely voluntary. You may click the "Exit Study" button in the upper-right corner at any time to withdraw unconditionally, without any negative consequences. Your responses will not be saved or uploaded.</p>
+  <h3>6. Anonymity and Confidentiality</h3>
+  <p>1. All data are recorded under an anonymous ID only; no identifying information such as your name or contact details is collected;</p>
+  <p>2. Raw data are stored in encrypted form and are accessible only to the research team;</p>
+  <p>3. Data are used solely for academic research;</p>
+  <p>4. Results will be reported only in aggregate form; no individually identifiable information will be disclosed.</p>
+  <h3>7. Risks and Discomfort</h3>
+  <p>This is a low-risk behavioral study. It involves no drugs, invasive procedures, or sensitive topics. If you feel any discomfort, you may stop at any time.</p>
+  <h3>8. Contact Information</h3>
+  <p>If you have any questions about this study, please contact: Jie Huang, 2024341080@mails.szu.edu.cn. If you have any concerns about your rights as a participant, you may also contact the IRB of Shenzhen University.</p>
+</div>`;
+
+const timeline = [];
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: consentContent + `
+    <div class="checkbox-group">
+      <div class="checkbox-item">
+        <input type="checkbox" id="c1" onchange="checkAll()"><label for="c1">I have read and understood the purpose and procedures of this study</label>
+      </div>
+      <div class="checkbox-item">
+        <input type="checkbox" id="c2" onchange="checkAll()"><label for="c2">I understand that I may withdraw at any time without penalty, and that withdrawn data will not be saved</label>
+      </div>
+      <div class="checkbox-item">
+        <input type="checkbox" id="c3" onchange="checkAll()"><label for="c3">I agree to participate anonymously, and I understand that my data will be used for academic research purposes only</label>
+      </div>
+    </div>`,
+  choices: "NO_KEYS",
+  data: { task: 'consent' },
+  on_load: function() {
+    window.checkAll = function() {
+      const ok = document.getElementById('c1').checked && document.getElementById('c2').checked && document.getElementById('c3').checked;
+      let oldBtn = document.getElementById('consent-enter');
+      if (oldBtn) oldBtn.remove();
+      const btn = document.createElement('button');
+      btn.id = 'consent-enter';
+      btn.className = 'jspsych-btn';
+      btn.style.cssText = 'font-size:18px;padding:12px 30px;' + (ok ? '' : 'opacity:.45;cursor:not-allowed;');
+      btn.textContent = 'Confirm and Enter the Study';
+      btn.disabled = !ok;
+      btn.onclick = function() { jsPsych.finishTrial({ consent: 'agreed' }); };
+      document.querySelector('.jspsych-content').appendChild(btn);
+    };
+    checkAll();
+    injectQuitButton();
+  }
+});
+
+// ================= Personal information =================
+const demoHTML = `
+<div class="demo-form">
+  <h2 style="text-align:center;margin-bottom:24px;">Personal Information</h2>
+  <p class="item">1. Your gender
+    <select name="gender" required>
+      <option value="">Please select</option><option value="1">1. Male</option><option value="2">2. Female</option></select></p>
+  <p class="item">2. Your age
+    <input type="number" name="age" min="18" max="60" required> years</p>
+  <p class="item">3. Your highest level of education
+    <select name="education" required>
+      <option value="">Please select</option><option value="1">1. Middle school or below</option>
+      <option value="2">2. High school / technical secondary school</option>
+      <option value="3">3. Some college / associate degree</option><option value="4">4. Bachelor's degree</option>
+      <option value="5">5. Master's degree</option><option value="6">6. Doctoral degree</option>
+    </select></p>
+  <p class="item">4. Your approximate annual family income ($)
+    <input type="number" name="income" min="0" max="99999999" step="any" required placeholder="e.g., 50000"
+           style="flex:0 0 220px; max-width:220px;"></p>
+  <p class="item">5. Which country do you primarily live in?
+    <select name="live_country" required>
+      <option value="">Please select</option><option value="1">China</option><option value="2">United States</option>
+    </select></p>
+  <p class="item">6. Have you ever lived overseas (continuously for six months or more)?
+    <select name="overseas" id="overseas" required onchange="toggleOverseas()">
+      <option value="">Please select</option><option value="1">1. Yes</option><option value="2">2. No</option>
+    </select></p>
+  <p class="item" id="overseas_country_row" style="display:none;">6a. Which country did you live in?
+    <input type="text" name="overseas_country" id="overseas_country" placeholder="Please enter the country" style="display:inline-block;"></p>
+  <p class="item" id="overseas_years_row" style="display:none;">6b. How long was this experience?
+    <input type="text" name="overseas_years" id="overseas_years" placeholder="e.g., 1.5 years" style="display:inline-block;"></p>
+</div>`;
+
+timeline.push({
+  type: jsPsychSurveyHtmlForm,
+  html: demoHTML,
+  preamble: '',
+  button_label: 'Next',
+  data: { task: 'demographics' },
+  on_load: function() {
+    window.toggleOverseas = function() {
+      const sel = document.getElementById('overseas');
+      const yes = (sel.value === '1');
+      const rowY = document.getElementById('overseas_years_row');
+      const subY = document.getElementById('overseas_years');
+      const rowC = document.getElementById('overseas_country_row');
+      const subC = document.getElementById('overseas_country');
+      rowY.style.display = yes ? 'block' : 'none';
+      rowC.style.display = yes ? 'block' : 'none';
+      if (yes) {
+        subY.setAttribute('required', 'required');
+        subC.setAttribute('required', 'required');
+      } else {
+        subY.removeAttribute('required'); subY.value = '';
+        subC.removeAttribute('required'); subC.value = '';
+      }
+    };
+    injectQuitButton();
+    const form = document.getElementById('jspsych-survey-html-form');
+    const hint = document.createElement('div');
+    hint.style.textAlign = 'center';
+    hint.innerHTML = '<div class="scale-hint" style="margin-top:26px;">Press the space bar to continue once you have completed all items.</div>';
+    form.parentNode.insertBefore(hint, form.nextSibling);
+    let submitted = false;
+    function onSpace(e) {
+      if (e.key !== ' ') return;
+      if (e.target && e.target.matches('input, select, textarea')) return;
+      e.preventDefault();
+      if (submitted) return;
+      if (form.checkValidity()) {
+        submitted = true;
+        document.removeEventListener('keydown', onSpace);
+        form.requestSubmit();
+      }
+    }
+    document.addEventListener('keydown', onSpace);
+  }
+});
+
+// ================= Instructions =================
+const instructionPages = [
+  ['Welcome to this study!',
+   'The study has two parts and takes about 10–15 minutes in total.',
+   'There are no right or wrong answers.',
+   'Please treat every choice as if it involved your own real money,',
+   'and respond according to your true preferences.'],
+  ['In the following task, you will see two options repeatedly:',
+   'Left: receive a fixed amount of money now (for example: receive $100 now);',
+   'Right: receive another amount after a delay (for example: receive $300 in 1 month);',
+   'Please place your left index finger on the F key and your right index finger on the J key;',
+   'Press F to choose the left option, and J to choose the right option']
+];
+instructionPages.forEach((lines, i) => {
+  const hintText = (i === 0) ? 'Press the space bar to continue' : 'Press the space bar to start the practice phase.';
+  timeline.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div class="instruction-box">${lines.map(t => `<p>${t}</p>`).join('')}<div class="scale-hint" style="margin-top:44px;color:#adb5bd;font-size:17px;">${hintText}</div></div>`,
+    choices: [' '],
+    data: { task: 'instruction', page: i + 1 },
+    on_load: function() { injectQuitButton(); }
+  });
+});
+
+// ================= Titration task (fixation → stimuli → blank; first reversal ends) =================
+function renderOptions(cfg, X, round, practice) {
+  return `
+    <div class="decision-container">
+      <div class="option-box">
+        <div class="option-desc">Receive now</div>
+        <div class="option-amount">$${X}</div>
+        <div class="option-key">Press F</div>
+      </div>
+      <div class="option-box">
+        <div class="option-desc">Receive in ${cfg.delayText}</div>
+        <div class="option-amount">$${cfg.future}</div>
+        <div class="option-key">Press J</div>
+      </div>
+    </div>
+    <div class="round-indicator"></div>`;
+}
+
+function createStaircaseBlock(cfg) {
+  // cfg: {future, delayText, startX, step, cap, condIndex, condLabel, practice}
+  const CAP = cfg.cap;
+  const st = { X: cfg.startX, prevX: null, endType: null, finalNow: null, history: [],
+               round: 1, ended: false, chosenAmount: null, reminded: false,
+               equivalenceEstimate: null, equivPending: false, t0: Date.now() };
+  let roundResult = null;
+
+  const fixation = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: '<div class="fixation">+</div>',
+    choices: "NO_KEYS",
+    trial_duration: 500,
+    data: { task: 'fixation', cond_index: cfg.condIndex },
+    on_load: function() { injectQuitButton(); }
+  };
+
+  const decision = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() { return renderOptions(cfg, st.X, st.round, cfg.practice); },
+    choices: "NO_KEYS",
+    data: { task: 'staircase_round', cond_index: cfg.condIndex, cond_label: cfg.condLabel,
+            A: cfg.startX, future: cfg.future, delay_text: cfg.delayText, step: cfg.step, startX: cfg.startX, cap: cfg.cap },
+    on_load: function() {
+      injectQuitButton();
+      let kb = null;
+      function bindKeys() {
+        kb = jsPsych.pluginAPI.getKeyboardResponse({
+          callback_function: onKey,
+          valid_responses: ['f','j','F','J'],
+          rt_method: 'performance', persist: true, allow_held_key: false
+        });
+      }
+      function showDominatedReminder() {
+        const modal = document.createElement('div');
+        modal.id = 'dominated-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);display:flex;justify-content:center;align-items:center;z-index:999998;';
+        modal.innerHTML = '<div style="background:#fff;padding:40px 48px;border-radius:12px;max-width:540px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.25);">' +
+          '<h3 style="font-size:23px;margin-bottom:16px;color:#c0392b;">Please answer carefully</h3>' +
+          '<p style="font-size:18px;line-height:1.9;margin-bottom:26px;">Please read both options carefully before making your choice.</p>' +
+          '<p style="font-size:16px;color:#6c757d;">Press the space bar to continue</p></div>';
+        document.body.appendChild(modal);
+        jsPsych.pluginAPI.getKeyboardResponse({
+          callback_function: function() { modal.remove(); bindKeys(); },
+          valid_responses: [' '],
+          rt_method: 'performance', persist: false, allow_held_key: false
+        });
+      }
+      function onKey(info) {
+        const choice = (info.key.toLowerCase() === 'f') ? 'now' : 'future';
+        const rt = info.rt;
+        const xAtChoice = st.X;   // 当轮"现在金额"
+        // 起始屏（如 10 vs 200 / 100 vs 2000）首次选"现在" → 提示一次（防误触，不计入）
+        if (choice === 'now' && xAtChoice === cfg.startX && !st.reminded) {
+          st.reminded = true;
+          if (kb) jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+          showDominatedReminder();
+          return;
+        }
+        // "现在金额"已等于未来金额、被试仍选"未来" → 结束决策，进入等值填空页
+        if (choice === 'future' && xAtChoice === cfg.future) {
+          st.history.push({ round: st.round, x: xAtChoice, choice: choice, rt: Math.round(rt) });
+          st.chosenAmount = cfg.future;
+          st.endType = 'at_equality';
+          st.ended = true;
+          st.equivPending = true;
+          roundResult = { round: st.round, x: xAtChoice, choice: choice, rt: Math.round(rt) };
+          if (kb) jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+          jsPsych.finishTrial({ response: info.key });
+          return;
+        }
+        let ended = false, endType = null;
+        if (choice === 'now') { ended = true; endType = 'now'; st.finalNow = xAtChoice; }
+        st.history.push({ round: st.round, x: xAtChoice, choice: choice, rt: Math.round(rt) });
+        st.chosenAmount = (choice === 'now') ? xAtChoice : cfg.future;
+        if (choice === 'future') {
+          st.prevX = st.X;
+          st.X = Math.min(st.X + cfg.step, CAP);
+          if (st.X >= CAP) { ended = true; endType = 'cap'; }
+        }
+        st.round++;
+        if (!ended && st.round > 30) { ended = true; endType = 'max_rounds'; }
+        st.ended = ended;
+        if (endType) st.endType = endType;
+        roundResult = { round: st.round - 1, x: xAtChoice, choice: choice, rt: Math.round(rt) };
+        if (kb) jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+        jsPsych.finishTrial({ response: info.key });
+      }
+      bindKeys();
+    },
+    on_finish: function(data) {
+      data.round = roundResult.round;
+      data.x = roundResult.x;
+      data.choice = roundResult.choice;
+      if (st.ended) {
+        data.task = cfg.practice ? 'practice_staircase' : 'formal_staircase';
+        data.sv = (st.endType === 'now' && st.prevX !== null)
+          ? Math.round((st.prevX + st.finalNow) / 2 * 100) / 100 : st.finalNow;
+        data.reversal_points = JSON.stringify(st.endType === 'now' ? [st.prevX, st.finalNow] : []);
+        data.n_reversals = (st.endType === 'now') ? 1 : 0;
+        data.rounds = st.round - (st.endType === 'at_equality' ? 0 : 1);
+        data.chosen_amount = st.chosenAmount;
+        data.choice_history = JSON.stringify(st.history);
+        data.censored = (st.endType === 'now') ? 'no'
+          : (st.endType === 'cap' ? 'upper_bound'
+          : (st.endType === 'at_equality' ? 'at_equality' : 'max_rounds'));
+        data.trial_duration_ms = Date.now() - st.t0;
+      }
+    }
+  };
+
+  const blank = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: '',
+    choices: "NO_KEYS",
+    trial_duration: function() { return 500 + Math.random() * 300; },
+    data: { task: 'isi', cond_index: cfg.condIndex },
+    on_load: function() { injectQuitButton(); }
+  };
+
+  // 等值填空页：决策屏结束后新开一页呈现（非弹窗）；未触发时在 on_load 立即跳过
+  const equivPage = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div class="instruction-box">
+        <p>How much money received <b>now</b> do you think is equal in value to</p>
+        <p style="margin:16px 0;">receiving <b>$${cfg.future}</b> in ${cfg.delayText}?</p>
+        <p style="margin:16px 0;">$ <input id="equiv-input" type="number" min="0"
+           style="font-size:24px;padding:10px 16px;width:200px;text-align:center;border:2px solid #adb5bd;border-radius:8px;"></p>
+        <div class="space-hint" style="margin-top:36px;color:#adb5bd;font-size:17px;">Enter a number and press the space bar to submit</div>
+      </div>`,
+    choices: "NO_KEYS",
+    data: { task: 'equivalence_question', cond_index: cfg.condIndex, cond_label: cfg.condLabel },
+    on_load: function() {
+      if (!st.equivPending) { jsPsych.finishTrial({ skipped: true }); return; }
+      injectQuitButton();
+      const equivT0 = performance.now();
+      setTimeout(function() {
+        const i = document.getElementById('equiv-input');
+        if (i) i.focus();
+      }, 100);
+      function onSpace(e) {
+        if (e.key !== ' ') return;
+        e.preventDefault();
+        const v = parseFloat(document.getElementById('equiv-input').value);
+        if (isNaN(v)) return;
+        document.removeEventListener('keydown', onSpace);
+        jsPsych.finishTrial({ estimate: v, rt: Math.round(performance.now() - equivT0) });
+      }
+      document.addEventListener('keydown', onSpace);
+    }
+  };
+
+  const innerLoop = {
+    timeline: [fixation, decision, blank, equivPage],
+    loop_function: function() { return !st.ended; }
+  };
+
+  return {
+    timeline: [innerLoop],
+    reset: function() {
+      st.X = cfg.startX; st.prevX = null; st.endType = null; st.finalNow = null;
+      st.history = []; st.round = 1;
+      st.ended = false; st.chosenAmount = null; st.reminded = false;
+      st.equivalenceEstimate = null; st.equivPending = false; st.t0 = Date.now();
+    }
+  };
+}
+
+// ================= Practice =================
+const practiceBlock = createStaircaseBlock({
+  future: 100, delayText: '2 weeks', startX: 5, step: 5, cap: 200,
+  condIndex: 0, condLabel: 'practice', practice: true
+});
+const practiceEndPage = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instruction-box">
+      <p>The practice phase is over.</p>
+      <p>Press the space bar to enter the formal experiment;</p>
+      <p>Press R to restart the practice phase.</p>
+    </div>`,
+  choices: [' ', 'r', 'R'],
+  data: { task: 'practice_end' },
+  on_load: function() { injectQuitButton(); }
+};
+timeline.push({
+  timeline: [practiceBlock, practiceEndPage],
+  loop_function: function(data) {
+    const d = data.values()[data.values().length - 1];
+    const again = (d.response === 'r' || d.response === 'R');
+    if (again) practiceBlock.reset();
+    return again;
+  }
+});
+
+// "The formal experiment begins now" splash (2 s)
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div style="text-align:center;font-size:36px;font-weight:bold;color:#212529;">The formal experiment begins now</div>',
+  choices: "NO_KEYS",
+  trial_duration: 2000,
+  data: { task: 'splash' },
+  on_load: function() { injectQuitButton(); }
+});
+
+// ================= Distance perception questions =================
+const DIST_LABELS = ['Very close','Relatively close','Somewhat close','Neutral','Somewhat far','Relatively far','Very far'];
+function createDistanceQuestion(delayText) {
+  const opts = DIST_LABELS.map((l,i) =>
+    `<div class="scale-option"><div class="num">${i+1}</div><div class="label">${l}</div></div>`).join('');
+  return {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div class="scale-question">
+        <div class="question-text">How psychologically distant does the next ${delayText} feel to you?</div>
+        <div class="scale-options">${opts}</div>
+        <div class="scale-hint">Please press a number key from 1 to 7</div>
+      </div>`,
+    choices: "NO_KEYS",
+    data: { task: 'distance_perception', delay_text: delayText },
+    on_load: function() {
+      let locked = false;
+      const kb = jsPsych.pluginAPI.getKeyboardResponse({
+        callback_function: function(info) {
+          if (locked) return;
+          locked = true;
+          const n = parseInt(info.key);
+          const opt = document.querySelectorAll('.scale-option')[n - 1];
+          if (opt) opt.style.cssText += 'border-color:#28a745;background:#d4edda;transform:scale(1.06);';
+          setTimeout(function() {
+            jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+            jsPsych.finishTrial({ response: info.key, rt: Math.round(info.rt), score: n });
+          }, 320);
+        },
+        valid_responses: ['1','2','3','4','5','6','7'],
+        rt_method: 'performance', persist: true, allow_held_key: false
+      });
+      injectQuitButton();
+    }
+  };
+}
+
+function createRestPage() {
+  return {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div class="instruction-box"><p>You may take a short break now. Press the space bar to continue when you are ready.</p></div>`,
+    choices: [' '],
+    data: { task: 'rest' },
+    on_load: function() { injectQuitButton(); }
+  };
+}
+
+// ================= Formal experiment (4 conditions; distance question + rest after each) =================
+const formalConditions = [
+  { future: 200,  delayText: '1 month',  startX: 10,  step: 10,  cap: 400,  condIndex: 1, durQ: 'one month' },
+  { future: 2000, delayText: '1 month',  startX: 100, step: 100, cap: 4000, condIndex: 2, durQ: 'one month' },
+  { future: 200,  delayText: '12 months', startX: 10,  step: 10,  cap: 400,  condIndex: 3, durQ: 'twelve months' },
+  { future: 2000, delayText: '12 months', startX: 100, step: 100, cap: 4000, condIndex: 4, durQ: 'twelve months' }
+];
+
+formalConditions.forEach(function(cond) {
+  timeline.push(createStaircaseBlock({
+    future: cond.future, delayText: cond.delayText, startX: cond.startX, step: cond.step, cap: cond.cap,
+    condIndex: cond.condIndex, condLabel: 'cond' + cond.condIndex, practice: false
+  }));
+  timeline.push(createDistanceQuestion(cond.durQ));
+  if (cond.condIndex < 4) timeline.push(createRestPage());
+});
+
+// Questionnaire transition
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instruction-box">
+      <p>Next, please complete two questionnaires (about 4–6 minutes).</p>
+      <p>There are no right or wrong answers. Please respond according to your true feelings.</p>
+      <p>Press the space bar to continue.</p>
+    </div>`,
+  choices: [' '],
+  data: { task: 'questionnaire_intro' },
+  on_load: function() { injectQuitButton(); }
+});
+
+// ================= CFC-14 (14 items, 7-point; B to go back) =================
+const CFC_LABELS = ['Not at all like me','Not much like me','Somewhat unlike me','Uncertain','Somewhat like me','Very much like me','Completely like me'];
+const cfcItems = [
+  'I consider how things might be in the future, and try to influence those things with my day to day behavior.',
+  'Often I engage in a particular behavior in order to achieve outcomes that may not result for many years.',
+  'I only act to satisfy immediate concerns, figuring the future will take care of itself.',
+  'My behavior is only influenced by the immediate (i.e., a matter of days or weeks) outcomes of my actions.',
+  'My convenience is a big factor in the decisions I make or the actions I take.',
+  'I am willing to sacrifice my immediate happiness or well-being in order to achieve future outcomes.',
+  'I think it is important to take warnings about negative outcomes seriously even if the negative outcome will not occur for many years.',
+  'I think it is more important to perform a behavior with important distant consequences than a behavior with less-important immediate consequences.',
+  'I generally ignore warnings about possible future problems because I think the problems will be resolved before they reach crisis level.',
+  'I think that sacrificing now is usually unnecessary since future outcomes can be dealt with at a later time.',
+  'I only act to satisfy immediate concerns, figuring that I will take care of future problems that may occur at a later date.',
+  'Since my day to day work has specific outcomes, it is more important to me than behavior that has distant outcomes.',
+  'When I make a decision, I think about how it might affect me in the future.',
+  'My behavior is generally influenced by future consequences.'
+];
+// Global item counter: CFC 14 + attention check 1 + ICS 16 = 31
+let qIndex = 0;
+let cfcCurrent = 0;
+let cfcAnswers = new Array(14).fill(null);
+
+function renderCfcItem(idx) {
+  const opts = CFC_LABELS.map((l, k) => {
+    const sel = cfcAnswers[idx] === k + 1;
+    return `<div class="scale-option" id="cfc-opt-${k+1}"${sel ? ' style="border-color:#28a745;background:#d4edda;"' : ''}><div class="num">${k+1}</div><div class="label">${l}</div></div>`;
+  }).join('');
+  const backHint = idx > 0 ? '<div class="scale-hint" style="margin-top:12px;font-size:15px;">Press B to go back to the previous item</div>' : '';
+  return `<div class="scale-question" id="cfc-container">
+      <div class="page-indicator">Question ${qIndex+1} / 31</div>
+      <div class="question-text">${cfcItems[idx]}</div>
+      <div class="scale-options">${opts}</div>
+      <div class="scale-hint">Please press a number key from 1 to 7</div>
+      ${backHint}
+    </div>`;
+}
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function() { return renderCfcItem(cfcCurrent); },
+  choices: "NO_KEYS",
+  data: { task: 'cfc_block' },
+  on_load: function() {
+    let locked = false;
+    let kb = null;
+    function update() {
+      const el = document.getElementById('cfc-container');
+      if (el) el.outerHTML = renderCfcItem(cfcCurrent);
+    }
+    function bind() {
+      kb = jsPsych.pluginAPI.getKeyboardResponse({
+        callback_function: onKey,
+        valid_responses: ['1','2','3','4','5','6','7','b','B'],
+        rt_method: 'performance', persist: true, allow_held_key: false
+      });
+    }
+    function onKey(info) {
+      const key = info.key.toLowerCase();
+      if (locked) return;
+      if (key === 'b') {
+        if (cfcCurrent > 0) { cfcCurrent--; qIndex--; cfcAnswers[cfcCurrent] = null; update(); }
+        return;
+      }
+      const n = parseInt(key);
+      locked = true;
+      cfcAnswers[cfcCurrent] = n;
+      const opt = document.getElementById('cfc-opt-' + n);
+      if (opt) { opt.style.borderColor = '#28a745'; opt.style.background = '#d4edda'; opt.style.transform = 'scale(1.06)'; }
+      setTimeout(function() {
+        locked = false;
+        if (cfcCurrent < 13) { cfcCurrent++; qIndex++; update(); }
+        else {
+          if (kb) jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+          qIndex++;
+          jsPsych.finishTrial({});
+        }
+      }, 320);
+    }
+    bind();
+    injectQuitButton();
+  },
+  on_finish: function(data) {
+    data.responses = JSON.stringify(cfcAnswers);
+    cfcAnswers = new Array(14).fill(null);
+    cfcCurrent = 0;
+  }
+});
+
+// ================= Attention check (between CFC and ICS, Question 15/31) =================
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function() {
+    const opts = CFC_LABELS.map((l, k) =>
+      `<div class="scale-option"><div class="num">${k+1}</div><div class="label">${l}</div></div>`).join('');
+    return `<div class="scale-question">
+        <div class="page-indicator">Question ${qIndex+1} / 31</div>
+        <div class="question-text">To ensure the quality of the data, please select 6 (very much like me) for this item without reading the statement.</div>
+        <div class="scale-options">${opts}</div>
+        <div class="scale-hint">Please press a number key from 1 to 7</div>
+      </div>`;
+  },
+  choices: "NO_KEYS",
+  data: { task: 'attention_check' },
+  on_load: function() {
+    injectQuitButton();
+    let locked = false;
+    const kb = jsPsych.pluginAPI.getKeyboardResponse({
+      callback_function: function(info) {
+        if (locked) return;
+        locked = true;
+        const n = parseInt(info.key);
+        const opt = document.querySelectorAll('.scale-option')[n - 1];
+        if (opt) opt.style.cssText += 'border-color:#28a745;background:#d4edda;transform:scale(1.06);';
+        setTimeout(function() {
+          jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+          qIndex++;
+          jsPsych.finishTrial({ response: info.key, rt: Math.round(info.rt), score: n });
+        }, 320);
+      },
+      valid_responses: ['1','2','3','4','5','6','7'],
+      rt_method: 'performance', persist: true, allow_held_key: false
+    });
+  },
+  on_finish: function(data) {
+    data.attention_check_correct = (data.score === 6);
+  }
+});
+
+// ================= ICS-16 (English official version; randomized order per participant) =================
+const ICS_LABELS = CFC_LABELS;
+const ICS16 = [
+  {dim:'HI', text:"I'd rather depend on myself than others."},
+  {dim:'HI', text:'I rely on myself most of the time; I rarely rely on others.'},
+  {dim:'HI', text:'I often do "my own thing".'},
+  {dim:'HI', text:'My personal identity, independent of others, is very important to me.'},
+  {dim:'VI', text:'It is important that I do my job better than others.'},
+  {dim:'VI', text:'Winning is everything.'},
+  {dim:'VI', text:'Competition is the law of nature.'},
+  {dim:'VI', text:'When another person does better than I do, I get tense and aroused.'},
+  {dim:'HC', text:'If a coworker gets a prize, I would feel proud.'},
+  {dim:'HC', text:'The well-being of my coworkers is important to me.'},
+  {dim:'HC', text:'To me, pleasure is spending time with others.'},
+  {dim:'HC', text:'I feel good when I cooperate with others.'},
+  {dim:'VC', text:'Parents and children must stay together as much as possible.'},
+  {dim:'VC', text:'It is my duty to take care of my family, even when I have to sacrifice what I want.'},
+  {dim:'VC', text:'Family members should stick together, no matter what sacrifices are required.'},
+  {dim:'VC', text:'It is important to me that I respect the decisions made by my groups.'}
+];
+const icsOrder = ICS16.map((_, i) => i);
+for (let i = icsOrder.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  const t = icsOrder[i]; icsOrder[i] = icsOrder[j]; icsOrder[j] = t;
+}
+let icsCurrent = 0;
+let icsAnswers = new Array(16).fill(null);
+
+function renderIcsItem(idx) {
+  const it = ICS16[icsOrder[idx]];
+  const opts = ICS_LABELS.map((l, k) => {
+    const sel = icsAnswers[idx] === k + 1;
+    return `<div class="scale-option" id="ics-opt-${k+1}"${sel ? ' style="border-color:#28a745;background:#d4edda;"' : ''}><div class="num">${k+1}</div><div class="label">${l}</div></div>`;
+  }).join('');
+  const backHint = idx > 0 ? '<div class="scale-hint" style="margin-top:12px;font-size:15px;">Press B to go back to the previous item</div>' : '';
+  return `<div class="scale-question" id="ics-container">
+      <div class="page-indicator">Question ${qIndex+1} / 31</div>
+      <div class="question-text">${it.text}</div>
+      <div class="scale-options">${opts}</div>
+      <div class="scale-hint">Please press a number key from 1 to 7</div>
+      ${backHint}
+    </div>`;
+}
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function() { return renderIcsItem(icsCurrent); },
+  choices: "NO_KEYS",
+  data: { task: 'ics_block' },
+  on_load: function() {
+    let locked = false;
+    let kb = null;
+    function update() {
+      const el = document.getElementById('ics-container');
+      if (el) el.outerHTML = renderIcsItem(icsCurrent);
+    }
+    function bind() {
+      kb = jsPsych.pluginAPI.getKeyboardResponse({
+        callback_function: onKey,
+        valid_responses: ['1','2','3','4','5','6','7','b','B'],
+        rt_method: 'performance', persist: true, allow_held_key: false
+      });
+    }
+    function onKey(info) {
+      const key = info.key.toLowerCase();
+      if (locked) return;
+      if (key === 'b') {
+        if (icsCurrent > 0) { icsCurrent--; qIndex--; icsAnswers[icsCurrent] = null; update(); }
+        return;
+      }
+      const n = parseInt(key);
+      locked = true;
+      icsAnswers[icsCurrent] = n;
+      const opt = document.getElementById('ics-opt-' + n);
+      if (opt) { opt.style.borderColor = '#28a745'; opt.style.background = '#d4edda'; opt.style.transform = 'scale(1.06)'; }
+      setTimeout(function() {
+        locked = false;
+        if (icsCurrent < 15) { icsCurrent++; qIndex++; update(); }
+        else {
+          if (kb) jsPsych.pluginAPI.cancelKeyboardResponse(kb);
+          qIndex++;
+          jsPsych.finishTrial({});
+        }
+      }, 320);
+    }
+    bind();
+    injectQuitButton();
+  },
+  on_finish: function(data) {
+    const dims = { HI: [], VI: [], HC: [], VC: [] };
+    icsOrder.forEach((itemIdx, pos) => { dims[ICS16[itemIdx].dim].push(icsAnswers[pos]); });
+    const mean = a => Math.round(a.reduce((x, y) => x + y, 0) / a.length * 100) / 100;
+    data.ics_HI = mean(dims.HI); data.ics_VI = mean(dims.VI);
+    data.ics_HC = mean(dims.HC); data.ics_VC = mean(dims.VC);
+    data.ics_I = Math.round((data.ics_HI + data.ics_VI) / 2 * 100) / 100;
+    data.ics_C = Math.round((data.ics_HC + data.ics_VC) / 2 * 100) / 100;
+    data.ics_responses = JSON.stringify(icsOrder.map((itemIdx, pos) => ({
+      item: itemIdx + 1, dim: ICS16[itemIdx].dim, score: icsAnswers[pos]
+    })));
+    icsAnswers = new Array(16).fill(null);
+    icsCurrent = 0;
+  }
+});
+
+// ================= End and payment =================
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function() {
+    return `<div class="instruction-box">
+      <h2>The study is complete. Thank you for your participation!</h2>
+      <p style="font-size:18px;line-height:2;max-width:720px;margin:0 auto;">
+        Your data will be saved and submitted automatically — no further action is needed.<br>
+        You may now close this page and return to Prolific.
+      </p>
+      <p style="margin-top:30px;font-size:18px;color:#6c757d;">Press the space bar to finish (or simply close this page)</p>
+    </div>`;
+  },
+  choices: [' '],
+  data: { task: 'end' },
+  on_load: function() {
+    // 结束页呈现即记录总时长与结束标记，并立即备份+上传（全程仅此一次）
+    try {
+      jsPsych.data.get().addToLast({
+        exp_end: 'end',
+        total_duration_min: Math.round((Date.now() - expStartTime) / 6000) / 10
+      });
+    } catch(e) {}
+    try { downloadCSV(false); } catch(e) {}
+    try { uploadCSV(false).catch(function(){}); } catch(e) {}
+  },
+  on_finish: function() {
+    try { window.close(); } catch(e) {}
+    setTimeout(function() {
+      document.body.innerHTML = '<div style="text-align:center;padding:120px 40px;font-family:Arial,sans-serif;">' +
+        '<h2 style="font-size:24px;color:#333;">Thank you for your participation</h2>' +
+        '<p style="font-size:16px;color:#6c757d;margin-top:12px;">Your data have been saved. You may now close this page.</p></div>';
+    }, 300);
+  }
+});
+
+jsPsych.run(timeline);
+</script>
+</body>
+</html>
