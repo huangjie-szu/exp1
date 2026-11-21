@@ -149,14 +149,16 @@ function confirmQuit() {
     '<p style="font-size:17px;color:#6c757d;">Your responses will not be saved or uploaded, and you will not receive the participation payment.<br>You may now close this page and return to Prolific.</p></div>';
 }
 
-const UPLOAD_URL = 'https://szu-hj-d4go84em55ed1c6e9-1511798712.ap-shanghai.app.tcloudbase.com/exp1saveus';
+const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbyjkgCtdB-YuEpu9Qv9on_IU-9yF_K0BZ8Wvg3HAaP00TrLzK6vdypx1XaBFU0S0csncg/exec';
 
 function uploadCSV(isPartial) {
   const csv = jsPsych.data.get().csv();
-  return fetch(UPLOAD_URL, {
+  // no-cors + text/plain = 简单请求，免跨域预检；Google 脚本收到后写入 Drive
+  return fetch(GOOGLE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid: uid, csv: csv, prefix: 'am' })
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ uid: uid, csv: csv })
   });
 }
 
@@ -890,7 +892,8 @@ timeline.push({
     return `<div class="instruction-box">
       <h2>The study is complete. Thank you for your participation!</h2>
       <p style="font-size:18px;line-height:2;max-width:720px;margin:0 auto;">
-        Your data will be saved and submitted automatically — no further action is needed.<br>
+        Your data will be saved and submitted automatically.<br>
+        A backup copy has also been downloaded to this computer.<br>
         You may now close this page and return to Prolific.
       </p>
       <p style="margin-top:30px;font-size:18px;color:#6c757d;">Press the space bar to finish (or simply close this page)</p>
