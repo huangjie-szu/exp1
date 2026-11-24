@@ -155,16 +155,18 @@ function confirmQuit() {
 
 const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbyjkgCtdB-YuEpu9Qv9on_IU-9yF_K0BZ8Wvg3HAaP00TrLzK6vdypx1XaBFU0S0csncg/exec';
 
-// 稳健发送：sendBeacon 主通道（关页/跳转都不断）+ fetch keepalive 兜底
+// 修复版发送：sendBeacon(<=64KB) 优先，超出或失败则用普通 fetch（无 64KB 限制），并返回 Promise 以便跳转前等待
 function sendText(url, text) {
+  console.log('[upload] payload bytes =', text.length);
   try {
-    if (navigator.sendBeacon && navigator.sendBeacon(url, new Blob([text], {type: 'text/plain'}))) return true;
+    if (text.length < 60000 && navigator.sendBeacon && navigator.sendBeacon(url, new Blob([text], {type: 'text/plain'}))) {
+      return Promise.resolve(true);
+    }
   } catch (e) {}
-  try {
-    fetch(url, { method: 'POST', mode: 'no-cors', keepalive: true,
-      headers: { 'Content-Type': 'text/plain' }, body: text });
-    return true;
-  } catch (e) { return false; }
+  return fetch(url, { method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' }, body: text })
+    .then(function() { return true; })
+    .catch(function() { return false; });
 }
 
 function buildPayload(tag) {
@@ -177,8 +179,7 @@ function buildPayload(tag) {
     client_time: new Date().toISOString(),
     elapsed_ms: Date.now() - expStartTime,
     user_agent: navigator.userAgent,
-    csv: jsPsych.data.get().csv(),
-    data: jsPsych.data.get().json()
+    csv: jsPsych.data.get().csv()
   };
 }
 
@@ -926,14 +927,14 @@ timeline.push({
     return `<div class="instruction-box">
       <h2>The study is complete. Thank you for your participation!</h2>
       <p style="font-size:18px;line-height:2;max-width:720px;margin:0 auto;">
-        Your responses have been recorded and are being submitted automatically.<br>
-        A backup copy has also been downloaded to this computer.<br>
-        You will be returned to Prolific in a few seconds. Please do not close this tab.
+        <b>Your responses are being uploaded now.</b><br>
+        This usually takes 10&ndash;20 seconds. Please <b>do not close or refresh this tab</b> until you are automatically redirected back to Prolific.<br>
+        Closing the page early may cause your responses to be lost.
       </p>
-      <p style="margin-top:30px;font-size:18px;color:#6c757d;">You may also press the space bar to continue.</p>
+      <p style="margin-top:30px;font-size:18px;color:#6c757d;">You will be redirected automatically &mdash; please wait.</p>
     </div>`;
   },
-  choices: [' '],
+  choices: "NO_KEYS",
   data: { task: 'end' },
   on_load: function() {
     // 结束页一出现：记时长 → 本地下载兜底 → sendBeacon 上传（跳转不中断）→ 1.2 秒后自动跳回 Prolific
@@ -944,11 +945,18 @@ timeline.push({
       });
     } catch(e) {}
     try { downloadCSV(false); } catch(e) {}
-    try { uploadCSV(false, 'complete'); } catch(e) {}
-    setTimeout(goToCompletion, 1200);
+    // 修复版：等上传真正完成（或 8 秒超时兜底）再跳回 Prolific，大数据包不再被 1.2 秒跳转掐断
+    var uploadDone = false;
+    try { uploadCSV(false, 'complete').then(function() { uploadDone = true; }); } catch(e) { uploadDone = true; }
+    var startWait = Date.now();
+    var waitTimer = setInterval(function() {
+      if (uploadDone || Date.now() - startWait > 8000) {
+        clearInterval(waitTimer);
+        goToCompletion();
+      }
+    }, 300);
   },
   on_finish: function() {
-    goToCompletion();
     if (!completionRedirected) {
       document.body.innerHTML = '<div style="text-align:center;padding:120px 40px;font-family:Arial,sans-serif;">' +
         '<h2 style="font-size:24px;color:#333;">Thank you for your participation</h2>' +
